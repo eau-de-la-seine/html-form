@@ -29,16 +29,16 @@ public class FormClassTest {
     private Double  field12;
     private BigInteger    field13;
     private BigDecimal    field14;
-    private List<String>  field15 = new ArrayList<>();
+    private List<String>  field15;
     @DateFormat("dd/MM/yyyy")
-    private List<Date>    field16 = new ArrayList<>();
-    private List<Short>   field17 = new ArrayList<>();
-    private List<Integer> field18 = new ArrayList<>();
-    private List<Long>    field19 = new ArrayList<>();
-    private List<Float>   field20 = new ArrayList<>();
-    private List<Double>  field21 = new ArrayList<>();
-    private List<BigInteger>   field22 = new ArrayList<>();
-    private List<BigDecimal>   field23 = new ArrayList<>();
+    private List<Date>    field16;
+    private List<Short>   field17;
+    private List<Integer> field18;
+    private List<Long>    field19;
+    private List<Float>   field20;
+    private List<Double>  field21;
+    private List<BigInteger>   field22;
+    private List<BigDecimal>   field23;
      
     @Override
     public String toString() {

@@ -9,11 +9,13 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.validation.ConstraintViolation;
@@ -41,7 +43,7 @@ float  / Float
 double / Double
 BigInteger
 BigDecimal
-List<T> where T is one of the previous type (Mandatory : has to be instanciated, example : new ArrayList<>() ).
+List<T> where T is one of the previous type.
 
  * @author Gokan EKINCI
  */
@@ -236,11 +238,11 @@ public class Form {
                 Class<?> parameterClass = (Class<?>) listType.getActualTypeArguments()[0];
                 
                 // @see http://stackoverflow.com/questions/14306166/java-generic-with-arraylist-extends-a-add-element
-                List listObject = (List) field.get(formInstance);
+                List<Object> listObject = new ArrayList<Object>();                
                 for(String value : values){
                     listObject.add(stringToObject(parameterClass, value, field));
                 }
-    
+                field.set(formInstance, listObject);
             } else {   
                 field.set(formInstance, stringToObject(fieldClass, values[0], field));           
             }
