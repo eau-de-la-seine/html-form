@@ -21,6 +21,7 @@ import javax.validation.ConstraintViolationException;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
+
 import fr.ekinci.htmlform.annotation.DateFormat;
 import fr.ekinci.htmlform.generation.annotation.Input;
 import fr.ekinci.htmlform.generation.annotation.Select;
@@ -28,9 +29,11 @@ import fr.ekinci.htmlform.generation.annotation.Textarea;
 
 
 /**
+ * Class for form validation
+ * 
 Supported field types are :
 String
-Date
+Date (Mandatory : has to be annotated with @DateFormat)
 short  / Short
 int    / Integer
 long   / Long
@@ -38,7 +41,7 @@ float  / Float
 double / Double
 BigInteger
 BigDecimal
-List<T> where T is one of the previous type
+List<T> where T is one of the previous type (Mandatory : has to be instanciated, example : new ArrayList<>() ).
 
  * @author Gokan EKINCI
  */
@@ -46,54 +49,45 @@ public class Form {
     public  final static String CSRF_TOKEN_NAME = "_csrf";
     private final static ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
 
-
-    public static <T> T validateForm(
-        Class<T> formClass,
-        HttpServletRequest request, 
-        String submittedFormName
-    ) throws WrongCsrfTokenException, FormException, ConstraintViolationException{
-        return validateForm(formClass, request, submittedFormName, null);
-    }
     
     /**
+     * Form validation method
      * 
      * @param formClass the return type of object 
      * @param request
      * @param submittedFormName
-     * @return null if it's not submitted, new T() if it's correctly submitted, FormException otherwise
-     * @throws WrongCsrfTokenException
+     * 
+     * @return null if it's not submitted, new T() if it's correctly submitted, FormException/ConstraintViolationException otherwise
+     * 
      * @throws FormException
      * @throws ConstraintViolationsException 
      */
-    public static <T> T validateForm(
+    public static <T> T validate(
         Class<T> formClass,
         HttpServletRequest request, 
         String submittedFormName, 
         String requestMethod
-    ) throws WrongCsrfTokenException, FormException, ConstraintViolationException {      
-        // If requestMethod is not precised (null), go to the next check
-        // Check if sended REQUEST_METHOD corresponds to wanted REQUEST_METHOD
-        if(requestMethod != null || !request.getMethod().equalsIgnoreCase(requestMethod)){
-            return null;
-        }
+    ) throws FormException, ConstraintViolationException { 
         
-        // If wanted form is not sended return null
+        // Control 1 : If wanted form is not sended return null
         Map<String, String[]> parameterMap = request.getParameterMap();        
         if(!parameterMap.containsKey(submittedFormName)){
             return null;
         }
         
-        // Test user csrf token
-        if(!checkCsrfToken(userCsrfToken(request), parameterMap)){
-            throw new WrongCsrfTokenException();
+        
+        // Control 2 : If requestMethod is not precised (null), go to the next check
+        if(requestMethod != null){
+            // Check if sended REQUEST_METHOD corresponds to wanted REQUEST_METHOD
+            if(!request.getMethod().equalsIgnoreCase(requestMethod)){
+                throw new FormException("Wrong REQUEST_METHOD : Sended method does not correspond to expected method");
+            }
         }
         
-        // Instanciate of form
-        T formInstance = null;
-        try {
-            formInstance = formClass.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException("An internal error happened during reflection instanciation of form object", e);
+        
+        // Control 3 : Test user csrf token
+        if(!checkCsrfToken(userCsrfToken(request), parameterMap)){
+            throw new FormException("Wrong CSRF_TOKEN : Sended token does not correspond to expected token");
         }
         
         
@@ -105,14 +99,14 @@ public class Form {
                 public String getFieldName(Field field) {
                     return field.getName();
                 }             
-            };        
-                   
+            };
         
-        // Fill form instance        
-        fillFormInstance(formClass, formInstance, parameterMap, fnf);
+            
+        // All controls are passed, now fill the form instance        
+        T formInstance = generateFormInstance(formClass, parameterMap, fnf);
         
         
-        // Validate instance of form
+        // Validate form instance
         Validator validator = validatorFactory.getValidator();
         Set<ConstraintViolation<T>> constraintViolations = validator.validate(formInstance);
         if(constraintViolations.size() > 0){
@@ -120,6 +114,18 @@ public class Form {
         }
         
         return formInstance;        
+    }
+    
+    
+    /**
+     * See {@link #validate(Class<T>, HttpServletRequest, String, String)}
+     */
+    public static <T> T validate(
+        Class<T> formClass,
+        HttpServletRequest request, 
+        String submittedFormName
+    ) throws FormException, ConstraintViolationException {
+        return validate(formClass, request, submittedFormName, null);
     }
     
     
@@ -176,23 +182,50 @@ public class Form {
     }
     
 
-    public static <T> void fillFormInstance(
+    /**
+     * Generate a form object from parameterMap
+     * 
+     * @param formClass
+     * @param parameterMap
+     * @param fnf
+     * @throws FormException
+     */
+    public static <T> T generateFormInstance(
         Class<T> formClass,
-        T formInstance,
         Map<String, String[]> parameterMap,
         FieldNameFinder fnf
     ) throws FormException {
+        
+        // Instanciation of form
+        T formInstance = null;
+        try {
+            formInstance = formClass.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException("An internal error happened during reflection instanciation of form object", e);
+        }
+        
         Field[] formFields = formClass.getDeclaredFields();
         for(Field formField : formFields){
-            formField.setAccessible(true);          
+            formField.setAccessible(true);
+            // values may be null if it's not sended
             String[] values = parameterMap.get(fnf.getFieldName(formField));
             if(values != null){
                 fillField(formInstance, formField, values);
             }
         }
+        
+        return formInstance;
     }
     
     
+    /**
+     * Filling a field from values
+     * 
+     * @param formInstance
+     * @param field
+     * @param values
+     * @throws FormException
+     */
     public static <T> void fillField(T formInstance, Field field, String[] values) throws FormException {
         Class<?> fieldClass = field.getType();
 
@@ -202,12 +235,13 @@ public class Form {
                 ParameterizedType listType = (ParameterizedType) field.getGenericType();
                 Class<?> parameterClass = (Class<?>) listType.getActualTypeArguments()[0];
                 
+                // @see http://stackoverflow.com/questions/14306166/java-generic-with-arraylist-extends-a-add-element
                 List listObject = (List) field.get(formInstance);
                 for(String value : values){
                     listObject.add(stringToObject(parameterClass, value, field));
                 }
     
-            } else {            
+            } else {   
                 field.set(formInstance, stringToObject(fieldClass, values[0], field));           
             }
         } catch (IllegalArgumentException | IllegalAccessException e) {
@@ -216,12 +250,21 @@ public class Form {
     }
     
     
+    /**
+     * Transforms string to Object
+     * 
+     * @param clazz Class of field
+     * @param value Sended string value
+     * @param field The field itself for obtaining annotations when its necessary
+     * @return
+     * @throws FormException
+     */
     public static Object stringToObject(
         Class<?> clazz, 
         String value,
         Field field
-    ) throws FormException{
-        try{ 
+    ) throws FormException {
+        try { 
             // String
             if(clazz == String.class){
                 return value;

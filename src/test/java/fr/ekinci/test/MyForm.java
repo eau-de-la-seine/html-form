@@ -64,12 +64,9 @@ public class MyForm {
         HttpServletRequest request = null;
         MyForm myForm = null;
         try {
-            if((myForm = Form.validateForm(MyForm.class, request, "submittedFormName")) != null){
+            if((myForm = Form.validate(MyForm.class, request, "submittedFormName")) != null){
                 
             }
-        } catch (WrongCsrfTokenException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         } catch (FormException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
