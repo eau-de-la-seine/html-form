@@ -11,11 +11,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.validation.ConstraintViolation;
@@ -23,7 +23,6 @@ import javax.validation.ConstraintViolationException;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
-
 import fr.ekinci.htmlform.annotation.DateFormat;
 import fr.ekinci.htmlform.generation.annotation.Input;
 import fr.ekinci.htmlform.generation.annotation.Select;
@@ -44,6 +43,7 @@ double / Double
 BigInteger
 BigDecimal
 List<T> where T is one of the previous type.
+Set<T> where T is one of the previous type.
 
  * @author Gokan EKINCI
  */
@@ -72,7 +72,7 @@ public class Form {
     ) throws FormException, ConstraintViolationException { 
         
         // Control 1 : If wanted form is not sended return null
-        Map<String, String[]> parameterMap = request.getParameterMap();        
+        Map<String, String[]> parameterMap = request.getParameterMap();
         if(!parameterMap.containsKey(submittedFormName)){
             return null;
         }
@@ -100,11 +100,11 @@ public class Form {
                 @Override
                 public String getFieldName(Field field) {
                     return field.getName();
-                }             
+                }
             };
         
             
-        // All controls are passed, now fill the form instance        
+        // All controls are passed, now fill the form instance
         T formInstance = generateFormInstance(formClass, parameterMap, fnf);
         
         
@@ -115,7 +115,7 @@ public class Form {
             throw new ConstraintViolationException(constraintViolations);
         }
         
-        return formInstance;        
+        return formInstance;
     }
     
     
@@ -239,6 +239,17 @@ public class Form {
                 
                 // @see http://stackoverflow.com/questions/14306166/java-generic-with-arraylist-extends-a-add-element
                 List<Object> listObject = new ArrayList<Object>();                
+                for(String value : values){
+                    listObject.add(stringToObject(parameterClass, value, field));
+                }
+                field.set(formInstance, listObject);
+            } else if (fieldClass == Set.class) { 
+                // @see http://stackoverflow.com/questions/1942644/get-generic-type-of-java-util-list
+                ParameterizedType listType = (ParameterizedType) field.getGenericType();
+                Class<?> parameterClass = (Class<?>) listType.getActualTypeArguments()[0];
+                
+                // @see http://stackoverflow.com/questions/14306166/java-generic-with-arraylist-extends-a-add-element
+                Set<Object> listObject = new HashSet<Object>();                
                 for(String value : values){
                     listObject.add(stringToObject(parameterClass, value, field));
                 }

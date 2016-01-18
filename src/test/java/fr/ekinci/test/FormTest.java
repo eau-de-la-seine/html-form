@@ -10,8 +10,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -113,7 +115,61 @@ public class FormTest {
                 list23.add(new BigDecimal("23.0"));
                 list23.add(new BigDecimal("24.0"));
                 list23.add(new BigDecimal("25.0"));
-                Assert.assertEquals("list23 failed", form.getField23(), list23);                
+                Assert.assertEquals("list23 failed", form.getField23(), list23);
+                
+                Set<String> list24 = new HashSet<>();
+                list24.add("This is a String 1");
+                list24.add("This is a String 2");
+                list24.add("This is a String 3");
+                Assert.assertEquals("list24 failed", form.getField24(), list24);
+                
+                Set<Date> list25 = new HashSet<>();
+                list25.add(new SimpleDateFormat("dd/MM/yyyy").parse("26/01/1992"));
+                list25.add(new SimpleDateFormat("dd/MM/yyyy").parse("27/01/1992"));
+                list25.add(new SimpleDateFormat("dd/MM/yyyy").parse("28/01/1992"));
+                Assert.assertEquals("list25 failed", form.getField25(), list25);
+                
+                Set<Short> list26 = new HashSet<>();
+                list26.add(new Short((short) 17));
+                list26.add(new Short((short) 18));
+                list26.add(new Short((short) 19));
+                Assert.assertEquals("list26 failed", form.getField26(), list26);
+                
+                Set<Integer> list27 = new HashSet<>();
+                list27.add(new Integer(18));
+                list27.add(new Integer(19));
+                list27.add(new Integer(20));
+                Assert.assertEquals("list27 failed", form.getField27(), list27);
+                
+                Set<Long> list28 = new HashSet<>();
+                list28.add(new Long(19L));
+                list28.add(new Long(20L));
+                list28.add(new Long(21L));
+                Assert.assertEquals("list28 failed", form.getField28(), list28);
+                
+                Set<Float> list29 = new HashSet<>();
+                list29.add(new Float(20.0F));
+                list29.add(new Float(21.0F));
+                list29.add(new Float(22.0F));
+                Assert.assertEquals("list29 failed", form.getField29(), list29);
+                
+                Set<Double> list30 = new HashSet<>();
+                list30.add(new Double(21.0d));
+                list30.add(new Double(22.0d));
+                list30.add(new Double(23.0d));
+                Assert.assertEquals("list30 failed", form.getField30(), list30);
+                
+                Set<BigInteger> list31 = new HashSet<>();
+                list31.add(new BigInteger("22"));
+                list31.add(new BigInteger("23"));
+                list31.add(new BigInteger("24"));
+                Assert.assertEquals("list31 failed", form.getField31(), list31);
+                
+                Set<BigDecimal> list32 = new HashSet<>();
+                list32.add(new BigDecimal("23.0"));
+                list32.add(new BigDecimal("24.0"));
+                list32.add(new BigDecimal("25.0"));
+                Assert.assertEquals("list32 failed", form.getField32(), list32);
             }
         } catch (ConstraintViolationException | FormException e) {
             e.printStackTrace();
@@ -147,6 +203,15 @@ public class FormTest {
         result.put("field21", new String[]{"21", "22", "23"});
         result.put("field22", new String[]{"22", "23", "24"});
         result.put("field23", new String[]{"23,0", "24,0", "25,0"});
+        result.put("field24", new String[]{"This is a String 1", "This is a String 2", "This is a String 3"});
+        result.put("field25", new String[]{"26/01/1992", "27/01/1992", "28/01/1992"});
+        result.put("field26", new String[]{"17", "18", "19"});
+        result.put("field27", new String[]{"18", "19", "20"});
+        result.put("field28", new String[]{"19", "20", "21"});
+        result.put("field29", new String[]{"20,0", "21,0", "22,0"});
+        result.put("field30", new String[]{"21", "22", "23"});
+        result.put("field31", new String[]{"22", "23", "24"});
+        result.put("field32", new String[]{"23,0", "24,0", "25,0"});
         return result;
     }
 }
